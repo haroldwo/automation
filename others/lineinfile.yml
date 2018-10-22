@@ -1,0 +1,15 @@
+- hosts:
+    - server
+  become: yes
+  tasks:
+    - name: set
+      replace:
+        path: /home/admin/pinpoint_agent/lib/log4j.xml
+        regexp: 'DEBUG'
+        replace: 'ERROR'
+        backup: yes
+      lineinfile:
+        dest: /home/admin/pinpoint_agent/lib/log4j.xml
+        regexp: 'DEBUG'
+        line: '        <level value="ERROR"/>'
+        backrefs: yes

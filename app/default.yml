@@ -1,0 +1,30 @@
+- hosts:
+    - server
+  become: yes
+  tasks:
+    - name: Create App Home
+      file:
+        path: /home/admin/myapp
+        state: directory
+        group: admin
+        owner: admin
+    - name: Expose service port
+      firewalld:
+        immediate: yes
+        port: 9090-9097/tcp
+        permanent: true
+        state: enabled
+    - name: Create App Log Dir
+      file:
+        path: /data/app/logs
+        state: directory
+        group: admin
+        owner: admin
+    - name: prepare pinpoint file
+      unarchive:
+        src: /home/admin/pinpoint_agent.zip
+        dest: /home/admin
+    - name: prepare skywalking file
+      unarchive:
+        src: /home/admin/skwagent.tar.gz
+        dest: /home/admin

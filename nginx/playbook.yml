@@ -1,0 +1,113 @@
+- hosts:
+  become: yes
+  pre_tasks:
+    - name: Confifure SELinux
+      selinux:
+        policy: targeted
+        state: permissive
+    - name: Define SELinux
+      shell: setenforce 0
+    - name: Expose app service port
+      firewalld:
+        immediate: yes
+        port: 9090-9097/tcp
+        permanent: true
+        state: enabled
+    - name: Expose vts service port
+      firewalld:
+        immediate: yes
+        port: 9013/tcp
+        permanent: true
+        state: enabled
+  roles:
+    - role: nginx
+      nginx_user: "nginx"
+#      nginx_worker_rlimit_nofile: 65535
+      nginx_http_params:
+        - sendfile on
+        - log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"'
+        - access_log {{nginx_log_dir}}/access.log main
+        - error_log {{nginx_log_dir}}/error.log {{nginx_error_log_level}}
+        - include mime.types
+        - keepalive_timeout 65
+        - vhost_traffic_status_zone
+      nginx_events_params:
+        - worker_connections 512
+        - debug_connection 127.0.0.1
+        - use epoll
+        - multi_accept on
+      nginx_sites:
+        frontend:
+          - listen 9090
+          - server_name {{ ansible_eno16777984.ipv4.address }}
+          - location / {
+              proxy_pass   http://frontend;
+              proxy_connect_timeout 4s;
+              index index.html index.htm;
+            }
+        drools:
+          - listen 9093
+          - server_name {{ ansible_eno16777984.ipv4.address }}
+          - location / {
+              proxy_pass   http://drools;
+              proxy_connect_timeout 4s;
+              index index.html index.htm;
+            }
+        core:
+          - listen 9096
+          - server_name {{ ansible_eno16777984.ipv4.address }}
+          - location / {
+              proxy_pass   http://core;
+              proxy_connect_timeout 4s;
+              index index.html index.htm;
+            }
+        vts:
+          - listen 9013
+          - server_name {{ ansible_eno16777984.ipv4.address }}
+          - location /status {
+              vhost_traffic_status_display;
+              vhost_traffic_status_display_format html;
+#          - ssl on;
+#          - ssl_certificate  /root/ssl/test.crt;
+#          - ssl_certificate_key  /root/ssl/test_nopass.key;
+#          - proxy_redirect http:// $scheme://;
+#          - port_in_redirect on;
+            }
+      nginx_configs:
+        proxy:
+          - proxy_set_header X-Real-IP  $remote_addr
+          - proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for
+#          - proxy_set_header Host $host:$server_port;
+        upstream:
+          - upstream frontend {
+              server 10.10.20.100:9090 weight=10 max_fails=1 fail_timeout=60s;
+              server 10.10.20.101:9090 weight=10 max_fails=1 fail_timeout=60s;
+            }
+          - upstream drools {
+              server 10.10.20.102:9093 weight=10 max_fails=1 fail_timeout=60s;
+              server 10.10.20.103:9093 weight=10 max_fails=1 fail_timeout=60s;
+            }
+          - upstream core {
+              server 10.10.20.104:9096 weight=10 max_fails=1 fail_timeout=60s;
+              server 10.10.20.105:9096 weight=10 max_fails=1 fail_timeout=60s;
+            }
+#        geo:
+#          - geo $local {
+#              default 0;
+#              127.0.0.1 1;
+#            }
+#        gzip:
+#          - gzip on
+#          - gzip_disable msie6
+#      nginx_snippets:
+#        error_pages:
+#          - error_page 500 /50x.html
+#          - error_page 502 /50x.html
+#          - error_page 503 /50x.html
+#          - error_page 504 /50x.html
+#      nginx_set_real_ip_from_cloudflare: True
+#      nginx_amplify: true
+#      nginx_amplify_api_key: "your_api_key_goes_here"
+#      nginx_amplify_update_agent: true

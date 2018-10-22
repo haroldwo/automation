@@ -1,0 +1,42 @@
+    xml version: 1.0
+    encoding: UTF-8
+    web-app:
+      version: 3.0
+      xmlns: http://java.sun.com/xml/ns/javaee
+      xmlns:xsi: http://www.w3.org/2001/XMLSchema-instance
+      xsi:schemaLocation: http://java.sun.com/xml/ns/javaee,http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd
+      display-name: webApiCase
+      context-param:
+        - param-name: webAppRootKey
+          param-value: webApiCase
+        - param-name: contextConfigLocation
+          param-value: classpath:/db-config.xml, classpath:/dao-config.xml, classpath:/applicationContext.xml, classpath:/applicationContext-cache.xml, classpath:/webApiCase-servlet.xml
+        - param-name: log4jConfiguration
+          param-value: classpath:log4j2.xml
+      listener:
+        - listener-class: org.springframework.web.context.ContextLoaderListener
+        - listener-class: org.springframework.web.util.Log4jConfigListener
+      servlet:
+        servlet-name: webApiCase
+        servlet-class: org.springframework.web.servlet.DispatcherServlet
+        init-param:
+          param-name: contextConfigLocation
+          param-value: classpath:webApiCase-servlet.xml
+        load-on-startup: 1
+        async-supported: true
+      servlet-mapping:
+        servlet-name: webApiCase
+        url-pattern: /
+      filter:
+        filter-name: CharacterEncodingFilter
+        filter-class: org.springframework.web.filter.CharacterEncodingFilter
+        init-param:
+          - param-name: encoding
+            param-value: UTF-8
+          - param-name: forceEncoding
+            param-value: true
+      filter-mapping:
+        filter-name: CharacterEncodingFilter
+        url-pattern: /
+      welcome-file-list:
+        welcome-file: index.jsp

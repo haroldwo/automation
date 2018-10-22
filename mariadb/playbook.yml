@@ -1,0 +1,52 @@
+- hosts: server
+  become: yes
+  pre_tasks:
+    - name: Expose DB port
+      firewalld:
+        immediate: yes
+        port: 3306/tcp
+        permanent: true
+        state: enabled
+    - name: Install Percona XtraBackup from Percona yum repository
+      yum:
+        name: http://www.percona.com/downloads/percona-release/redhat/0.1-6/percona-release-0.1-6.noarch.rpm
+#    - name: Install the MariaDB repo(touch)
+#      file:
+#        path: /etc/yum.repo.d/mariadb.repo
+#        state: touch
+#    - name: Install the MariaDB repo(insert)
+#      yum_repository:
+#          name: MariaDB
+#          baseurl: http://yum.mariadb.org/10.3/centos7-amd64
+#          gpgkey: https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+#          gpgcheck: yes
+  roles:
+    - role: geerlingguy.mysql
+      mysql_server_id: "10"
+      mysql_replication_role: 'master'
+      mysql_replication_master: '10.10.30.20'
+      mysql_replication_user:
+        name: repl
+        password: repl
+      mysql_root_password: root
+- hosts: fktsdb02
+  become: yes
+  pre_tasks:
+    - name: Install Percona XtraBackup from Percona yum repository
+      yum:
+        name: http://www.percona.com/downloads/percona-release/redhat/0.1-6/percona-release-0.1-6.noarch.rpm
+    - name: Expose DB port
+      firewalld:
+        immediate: yes
+        port: 3306/tcp
+        permanent: true
+        state: enabled
+  roles:
+    - role: geerlingguy.mysql
+      mysql_server_id: "11"
+      mysql_replication_role: 'slave'
+      mysql_replication_master: '10.10.30.20'
+      mysql_replication_user:
+        name: repl
+        password: repl
+      mysql_root_password: root

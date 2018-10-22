@@ -1,0 +1,16 @@
+- hosts:
+    - server
+  become: yes
+  tasks:
+    - name: restart rmapp redis service
+      service:
+        name: redis10379
+        state: restarted
+    - name: restart rmapp redis service
+      service:
+        name: redis10380
+        state: restarted
+    - name: restart rmapp redis service
+      service:
+        name: redis10381
+        state: restarted

@@ -1,0 +1,8 @@
+- hosts:
+    - server
+  become: yes
+  tasks:
+    - name: restart rmapp keepalived service
+      service:
+        name: keepalived
+        state: restarted

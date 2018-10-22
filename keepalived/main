@@ -1,0 +1,183 @@
+global_defs {
+#    notification_email {
+#        admin@domain.com
+#        0633225522@domain.com
+#    }
+#    notification_email_from keepalived@domain.com
+#    smtp_server 192.168.200.20
+#    smtp_connect_timeout 30
+#    vrrp_mcast_group4 224.0.38.12
+    router_id HA_RCAPEF01
+}
+
+#vrrp_sync_group VG1 {
+#    group {
+#        VI_1
+#        VI_2
+#    }
+#    notify_master /path/xx.sh
+#    notify_backup /path/xx.sh
+#    notify_fault "path/xx.sh VG_1"
+#}
+
+vrrp_script check_nginx {
+    script /etc/keepalived/check_nginx.sh
+    interval 2
+    fall 60
+    rise 60
+}
+vrrp_instance VI_1 {
+    state MASTER
+    interface eno16777984
+    virtual_router_id 51
+    priority 150
+    advert_int 1
+    nopreempt
+    mcast_src_ip 10.10.10.21
+#    notify_master /path_to_script/script_master.sh
+#    notify_backup /path_to_script/script_backup.sh
+#    notify_fault /path_to_script/script_fault.sh
+#    lvs_sync_daemon_interface string
+#    smtp_alert
+#    nopreempt
+#    preempt_delay
+    unicast_peer {
+      10.10.10.22
+    }
+    authentication {
+        auth_type PASS
+        auth_pass i5tNcK#!
+    }
+    virtual_ipaddress {
+        10.10.10.20/24
+    }
+    track_script {
+      check_nginx
+    }
+#    virtual_ipaddress_excluded {
+#        @IP
+#        @IP
+#    }
+#    track_interface{
+#      eth0
+#      eth1
+#    }
+}
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface eno16777984
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    mcast_src_ip 10.10.10.22
+    nopreempt
+    unicast_peer {
+      10.10.10.21
+    }
+    authentication {
+        auth_type PASS
+        auth_pass i5tNcK#!
+    }
+    virtual_ipaddress {
+        10.10.10.20/24
+    }
+    track_script {
+      check_nginx
+    }
+}
+
+#virtual_server 192.168.200.10 80 {
+#    delay_loop 30
+#    lb_algo wrr
+#    lb_kind NAT
+#    persistence_timeout 50
+#    protocol TCP
+#    persistence_granularity <NETMASK>
+#    virtualhost <string>
+#
+#    sorry_server 192.168.100.100 80
+#    real_server 192.168.100.2 80 {
+#        weight 2
+#        TCP_CHECK {
+#            connect_timeout 3
+#            connect_port 23
+#            }
+#        HTTP_GET {
+#            url {
+#                path /testurl/test.jsp
+#                digest ec90a42b99ea9a2f5ecbe213ac9eba03
+#            }
+#            url {
+#                path /testurl2/test.jsp
+#                digest 640205b7b0fc66c1ea91c463fac6334c
+#            }
+#            connect_port <port>
+#            connect_timeout 3
+#            retry 3
+#            delay_before_retry 2
+#        }
+#        SMTP_CHECK{
+#          host{
+#            connect_ip <IP ADDRESS>
+#            connect_port <port>
+#            bindto <IP ADDRESS>
+#          }
+#          connect_timeout 5
+#          retry 3
+#          delay_before_retry 2
+#          helo_name <string> | <quoted-string>
+#          }
+#        MISC_CHECK{
+#          misc_path <string> | <quoted-string>
+#          misc_timeout
+#          misc_dynamic
+#          }
+#    }
+#    real_server 192.168.100.3 80 {
+#        weight 1
+#        HTTP_GET {
+#            url {
+#                path /testurl/test.jsp
+#                digest 640205b7b0fc66c1ea91c463fac6334c
+#            }
+#            connect_timeout 3
+#            retry 3
+#            delay_before_retry 2
+#        }
+#    }
+#}
+#virtual_server 192.168.200.12 443 {
+#    delay_loop 20
+#    lb_algo rr
+#    lb_kind NAT
+#    persistence_timeout 360
+#    protocol TCP
+#    real_server 192.168.100.2 443 {
+#        weight 1
+#        TCP_CHECK {
+#            connect_timeout 3
+#        }
+#    }
+#    real_server 192.168.100.3 443 {
+#        weight 1
+#        TCP_CHECK {
+#            connect_timeout 3
+#        }
+#    }
+#}
+
+# cat /etc/keepalived/check_nginx.sh
+Count1=`sudo netstat -antp |grep -v grep |grep nginx |wc -l`
+if [ $Count1 -eq 0 ]; then
+    systemctl restart nginx
+    sleep 2
+    Count2=`sudo netstat -antp |grep -v grep |grep nginx |wc -l`
+    if [ $Count2 -eq 0 ]; then
+        service keepalived stop
+    else
+        exit 0
+    fi
+else
+    exit 0
+fi

@@ -1,0 +1,2 @@
+redis01 172.16.0.13 redis
+redis02 172.16.0.14 redis
